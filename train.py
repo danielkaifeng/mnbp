@@ -82,7 +82,7 @@ with tf.Session(config=config) as sess:
 	print 'training start...'
 	for step in range(epochs):
 		batch_x, batch_y = sess.run([train_data, train_label])
-		batch_x = normalize(batch_x)
+		#batch_x = normalize(batch_x)
 
 		sess.run(model.optimizer, feed_dict={model.x: batch_x, model.labels: batch_y, model.dropout: dropout})
 
@@ -91,7 +91,7 @@ with tf.Session(config=config) as sess:
 			train_logits, loss = sess.run((model.logits, model.loss), feed_dict={model.x: batch_x, model.labels: batch_y, model.dropout: dropout})
 
 			test_x, test_y = sess.run([test_data, test_label])
-			test_x = normalize(test_x)
+			#test_x = normalize(test_x)
 			mid, test_logits, val_loss = sess.run([model.mid, model.logits, model.loss], feed_dict={model.x: test_x, model.labels: test_y, model.dropout: 0})
 			
 			#rand_acc = np.mean(np.square(np.log1p(ph) - np.log1p(test_y)))
@@ -119,7 +119,7 @@ with tf.Session(config=config) as sess:
 			with tf.gfile.FastGFile('./load_pb/%s_%d.pb' %(prefix,step), mode='wb') as f:
 				f.write(output_graph_def.SerializeToString())
 
-		if step % 10 == 0 and val_acc<0.04:
+		if step % 10 == 0 and val_acc<0.02:
 			tx = normalize(tx)
 			for i in range(0,9600,200):
 				px = tx[i:i+200]

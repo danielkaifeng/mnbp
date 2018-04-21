@@ -3,3 +3,4 @@ log*
 *tfrecords
 data/submit*
 *csv
+*json

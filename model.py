@@ -20,7 +20,7 @@ def leaky_relu(x, leak=0.01, name='leaky_relu'):
 
 class build_network():
 	def __init__(self):
-		self.x = tf.placeholder(tf.float32, shape=[None, 21], name='x')
+		self.x = tf.placeholder(tf.float32, shape=[None, 21+299], name='x')
 		self.labels = tf.placeholder(tf.float32, [None, 5], name='y')
 
 		self.dropout = tf.placeholder(tf.float32, name='dropout')
@@ -45,8 +45,8 @@ class build_network():
 				#x = tf.clip_by_value(self.labels / alpha, 1e-4, 1 - 1e-4)
 				#y = tf.clip_by_value(self.logits / alpha, 1e-4, 1 - 1e-4)
 
-				mse = tf.sqrt(tf.reduce_mean(tf.square(self.mid)))
-				self.loss = tf.reduce_mean(-0.2*tf.log(mse) + tf.log(tf.square(self.logits-self.labels) + 0.0001 )) 
+				#mse = tf.sqrt(tf.reduce_mean(tf.square(self.mid)))
+				self.loss = tf.reduce_mean(tf.log(tf.square(self.logits-self.labels) + 0.0001 )) 
 				#self.loss = tf.reduce_mean(tf.squared_difference(self.logits, self.labels))
 				#self.acc2 = tf.reduce_mean(np.array([1,1,2,2,1]) * tf.square(tf.log1p(logits) - tf.log1p(self.labels)))
 				#self.acc = tf.reduce_mean(tf.square(tf.log1p(logits) - tf.log1p(self.labels)))
