@@ -2,20 +2,25 @@
 import os
 import tensorflow as tf
 from sys import argv
+import random
 
 import json
 
-def create_record(x_path, y_path, json_path):
+def write_tfrecords(data, y, writer):
+	example = tf.train.Example(features=tf.train.Features(feature={
+		"x": tf.train.Feature(float_list=tf.train.FloatList(value=data)),
+		'y': tf.train.Feature(float_list=tf.train.FloatList(value=y))
+	}))
+
+	writer.write(example.SerializeToString())
+
+def create_record(x_path, y_path, anno_json):
 	train_writer = tf.python_io.TFRecordWriter("./data/train.tfrecords")
 	test_writer = tf.python_io.TFRecordWriter("./data/test.tfrecords")
-
-
-	anno_json = json.load(open(json_path, 'r'))
 
 	f1 = open(x_path, 'r')
 	f2 = open(y_path, 'r')
 
-	import random
 	i = 1
 
 	while True:
@@ -25,7 +30,7 @@ def create_record(x_path, y_path, json_path):
 					break
 
 			lx = xline.strip().split(',')
-			ly = yline.strip().split()
+			ly = yline.strip().split('\t')
 	
 			ID = lx[0]
 			assert ID == ly[0] 
@@ -40,21 +45,14 @@ def create_record(x_path, y_path, json_path):
 			if random.randint(0,9) == 1:
 					train = False
 
-
-			print str(i) + '\t' + ID
+			if i % 200 == 1:
+				print str(i) 
 			i += 1
-		
-
-			example = tf.train.Example(features=tf.train.Features(feature={
-				"x": tf.train.Feature(float_list=tf.train.FloatList(value=data)),
-				'y': tf.train.Feature(float_list=tf.train.FloatList(value=y))
-			}))
 
 			if train:
-				train_writer.write(example.SerializeToString())
+				write_tfrecords(data, y, train_writer)
 			else:
-				test_writer.write(example.SerializeToString())
-
+				write_tfrecords(data, y, test_writer)
 
 	train_writer.close()
 	test_writer.close()
@@ -77,7 +75,7 @@ def read_and_decode(filename):
 	_, serialized_example = reader.read(filename_queue)
 	features = tf.parse_single_example(serialized_example,
 									   features={
-										   'x': tf.FixedLenFeature([21 + 299], tf.float32),
+										   'x': tf.FixedLenFeature([159 + 299], tf.float32),
 										   'y' : tf.FixedLenFeature([5], tf.float32),
 									   })
 
@@ -90,10 +88,52 @@ def read_and_decode(filename):
 
 
 
-if __name__ == '__main__':
-	train_x_path = "data/train_x0.csv"
-	train_json_path = "data/transfer.json"
-	train_y_path = "data/train_y.csv"
 
-	create_record(train_x_path, train_y_path, train_json_path)
+if __name__ == '__main__':
+	#train_x_path = "data/train_x0.csv"
+	train_y_path = "data/train_y.csv"
+	train_x_path = "data/sort_train160.csv"
+
+	test_x_path = "data/test160.csv"
+
+	json_path = "data/transfer.json"
+	anno_json = json.load(open(json_path, 'r'))
+	if True:
+		with open(test_x_path, 'r') as f1:
+			txt = f1.readlines()
+
+		out = ""
+		for xline in txt:
+			lx = xline.strip().split(',')
+	
+			ID = lx[0]
+			data = lx[1:]
+			binary_label = convert_label_to_multihot(anno_json[ID],299)
+			data += [str(x) for x in binary_label]
+
+			out += ID + ',' + ','.join(data) + '\n'
+			
+		with open("data/test_160299.csv",'w') as f2:
+			f2.writelines(out)
+
+
+	create_record(train_x_path, train_y_path, anno_json)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

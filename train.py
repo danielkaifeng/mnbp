@@ -58,7 +58,8 @@ epochs = 25000
 predict = True
 
 if predict:
-		tx = np.loadtxt("data/test_x0.csv", delimiter=',', usecols=range(1,22))
+		tx = np.loadtxt("data/test_160299.csv", delimiter=',', usecols=range(1,160+299))
+
 		ph = np.array([[125.3645,77.016500,1.606788,1.372469,2.768998] for x in range(256)])
 
 init_global = tf.global_variables_initializer()
@@ -119,8 +120,8 @@ with tf.Session(config=config) as sess:
 			with tf.gfile.FastGFile('./load_pb/%s_%d.pb' %(prefix,step), mode='wb') as f:
 				f.write(output_graph_def.SerializeToString())
 
-		if step % 10 == 0 and val_acc<0.02:
-			tx = normalize(tx)
+		if step % 10 == 0 and val_acc < 0.036:
+			#tx = normalize(tx)
 			for i in range(0,9600,200):
 				px = tx[i:i+200]
 				res = sess.run(model.logits, feed_dict={model.x: px, model.dropout: 0})
@@ -131,7 +132,8 @@ with tf.Session(config=config) as sess:
 					pred_out = np.concatenate((pred_out, res))	
 
 			print pred_out.shape
-			np.savetxt("data/submit_v2_%s.csv" % str(round(val_acc,4)), np.round(pred_out,3),  delimiter=',', fmt='%f')
+			print pred_out
+			np.savetxt("data/submit_v3_%s.csv" % str(round(val_acc,4)), np.round(pred_out,3),  delimiter=',', fmt='%f')
 			
 
 	coord.request_stop()
