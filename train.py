@@ -125,7 +125,7 @@ with tf.Session(config=config) as sess:
 			#tx = normalize(tx)
 			for i in range(0,9600,200):
 				px = tx[i:i+200]
-				res = sess.run(model.logits, feed_dict={model.x: px, model.dropout: 0})
+				res = sess.run(model.logits, feed_dict={model.x: px, model.dropout: 0, model.is_train: True})
 			
 				if i == 0:
 					pred_out = res
