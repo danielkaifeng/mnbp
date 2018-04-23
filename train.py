@@ -5,8 +5,8 @@ from read_data import *
 from tensorflow.python.framework import graph_util
 from tfrc import read_and_decode 
 
-batch_size = 128
-dropout = 0.4
+batch_size = 256
+dropout = 0.5
 
 
 
@@ -32,7 +32,7 @@ def get_train_test_data(train_path, test_path, batch_size):
 													min_after_dequeue=1000)
 
 		test_data, test_label = tf.train.shuffle_batch([test_data_batch, test_label_batch],
-													batch_size=128, capacity=50000,
+													batch_size=512, capacity=50000,
 													#num_threads=3,
 													min_after_dequeue=1000)
 
@@ -49,16 +49,16 @@ model = build_network()
 
 
 saver=tf.train.Saver()
-config.gpu_options.per_process_gpu_memory_fraction = 0.4
+config.gpu_options.per_process_gpu_memory_fraction = 0.6
 
 
 read_log = argv[1]
 prefix = 'mnbp_v1'
-epochs = 25000
+epochs = 8000000
 predict = True
 
 if predict:
-		tx = np.loadtxt("data/test_160299.csv", delimiter=',', usecols=range(1,160+299))
+		tx = np.loadtxt("data/new_test_x.csv", delimiter=',', usecols=range(1,160+299))
 
 		ph = np.array([[125.3645,77.016500,1.606788,1.372469,2.768998] for x in range(256)])
 
@@ -85,15 +85,16 @@ with tf.Session(config=config) as sess:
 		batch_x, batch_y = sess.run([train_data, train_label])
 		#batch_x = normalize(batch_x)
 
-		sess.run(model.optimizer, feed_dict={model.x: batch_x, model.labels: batch_y, model.dropout: dropout})
+		sess.run(model.optimizer, feed_dict={model.x: batch_x, model.labels: batch_y, model.dropout: dropout, model.is_train: True})
 
 
 		if step % 10 == 0:	
-			train_logits, loss = sess.run((model.logits, model.loss), feed_dict={model.x: batch_x, model.labels: batch_y, model.dropout: dropout})
+			train_logits, loss = sess.run((model.logits, model.loss), feed_dict={model.x: batch_x, model.labels: batch_y, model.dropout: dropout, model.is_train: True})
 
 			test_x, test_y = sess.run([test_data, test_label])
 			#test_x = normalize(test_x)
-			mid, test_logits, val_loss = sess.run([model.mid, model.logits, model.loss], feed_dict={model.x: test_x, model.labels: test_y, model.dropout: 0})
+			mid, test_logits, val_loss = sess.run([model.mid, model.logits, model.loss], feed_dict={model.x: test_x, 
+																	model.labels: test_y, model.dropout: 0, model.is_train: False})
 			
 			#rand_acc = np.mean(np.square(np.log1p(ph) - np.log1p(test_y)))
 			acc = np.mean(np.square(np.log1p(train_logits) - np.log1p(batch_y)))
@@ -116,11 +117,11 @@ with tf.Session(config=config) as sess:
 
 		if step % 1000 == 1 and step > epochs - 2000 and False:	
 			output_graph_def = graph_util.convert_variables_to_constants(sess, sess.graph_def, 
-											output_node_names=["x", "y", 'dropout', 'version'])
+											output_node_names=["x", "y", 'dropout', 'version', 'is_train'])
 			with tf.gfile.FastGFile('./load_pb/%s_%d.pb' %(prefix,step), mode='wb') as f:
 				f.write(output_graph_def.SerializeToString())
 
-		if step % 10 == 0 and val_acc < 0.036:
+		if step % 10 == 0 and val_acc < 0.04:
 			#tx = normalize(tx)
 			for i in range(0,9600,200):
 				px = tx[i:i+200]
@@ -133,7 +134,7 @@ with tf.Session(config=config) as sess:
 
 			print pred_out.shape
 			print pred_out
-			np.savetxt("data/submit_v3_%s.csv" % str(round(val_acc,4)), np.round(pred_out,3),  delimiter=',', fmt='%f')
+			np.savetxt("data/submit_v5_%s.csv" % str(round(val_acc,4)), np.round(pred_out,3),  delimiter=',', fmt='%f')
 			
 
 	coord.request_stop()

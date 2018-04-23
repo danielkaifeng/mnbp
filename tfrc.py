@@ -117,7 +117,7 @@ if __name__ == '__main__':
 			f2.writelines(out)
 
 
-	create_record(train_x_path, train_y_path, anno_json)
+	#create_record(train_x_path, train_y_path, anno_json)
 
 
 
